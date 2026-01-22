@@ -24,29 +24,52 @@
     </div>
   </div>
 
-  <script>
-    const el = document.getElementById("q");
-    const btnToday = document.getElementById("today");
-    const btnMore = document.getElementById("more");
-    let archive = null;
+<script>
+  const $q = document.getElementById("q");
 
-    async function loadJSON(path){
-      const res = await fetch(path + "?v=" + Date.now(), { cache: "no-store" });
-      if(!res.ok) throw new Error("fetch failed: " + path);
-      return res.json();
+  async function loadJSON(path) {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`${path} ${res.status}`);
+    return await res.json();
+  }
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  async function drawToday() {
+    try {
+      const today = await loadJSON("./today.json");
+      const t = (today && typeof today.q === "string") ? today.q.trim() : "";
+
+      // todayが空ならアーカイブから1枚（“沈黙の代替”）
+      if (!t) {
+        const archive = await loadJSON("./questions.json");
+        $q.textContent = pick(archive);
+        return;
+      }
+
+      $q.textContent = t;
+    } catch (e) {
+      console.error(e);
+      $q.textContent = "……";
     }
+  }
 
-    btnToday.addEventListener("click", async () => {
-      const data = await loadJSON("./today.json");
-      el.textContent = data.q || "";
-    });
+  async function drawRandom() {
+    try {
+      const archive = await loadJSON("./questions.json");
+      $q.textContent = pick(archive);
+    } catch (e) {
+      console.error(e);
+      $q.textContent = "……";
+    }
+  }
 
-    btnMore.addEventListener("click", async () => {
-      if(!archive) archive = await loadJSON("./questions.json");
-      if(!Array.isArray(archive) || archive.length === 0){ el.textContent = ""; return; }
-      const q = archive[Math.floor(Math.random() * archive.length)];
-      el.textContent = q || "";
-    });
-  </script>
+  // 既存のボタンに紐付け（idはあなたのHTMLに合わせて）
+  document.getElementById("btn-today").addEventListener("click", drawToday);
+  document.getElementById("btn-more").addEventListener("click", drawRandom);
+</script>
+
 </body>
 </html>
