@@ -1,0 +1,33 @@
+name: daily-question
+
+on:
+  schedule:
+    - cron: "5 15 * * *"  # 00:05 JST（UTC基準）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate daily question
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-2.0-flash
+        run: node scripts/generate_daily_question.mjs
+
+      - name: Commit & push
+        run: |
+          git config user.name "ink-inc-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/today.json docs/questions.json
+          git commit -m "daily: add 1 question" || exit 0
+          git push
