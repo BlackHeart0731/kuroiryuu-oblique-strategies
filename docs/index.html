@@ -8,6 +8,9 @@
     body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:#0b0b0c;color:#eaeaea;}
     .wrap{max-width:780px;margin:0 auto;padding:28px 18px 40px;}
     .by{font-size:12px;opacity:.65;letter-spacing:.04em;margin-bottom:18px;}
+    .by a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.18);}
+    .by a:hover{opacity:.9;}
+
     .q{min-height:8em;font-size:22px;line-height:1.7;white-space:pre-wrap;}
     .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
     button{background:#141417;color:#eaeaea;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer;}
@@ -16,60 +19,64 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="by">By Ink Inc.</div>
+    <div class="by">
+      By Ink Inc. / <a href="./about.html">この装置について</a>
+    </div>
+
     <div id="q" class="q"></div>
+
     <div class="btns">
       <button id="today">カードを引く</button>
       <button id="more">さらにカードを引く</button>
     </div>
   </div>
 
-<script>
-  const $q = document.getElementById("q");
+  <script>
+    const $q = document.getElementById("q");
 
-  async function loadJSON(path) {
-    const res = await fetch(path, { cache: "no-store" });
-    if (!res.ok) throw new Error(`${path} ${res.status}`);
-    return await res.json();
-  }
+    async function loadJSON(path) {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(`${path} ${res.status}`);
+      return await res.json();
+    }
 
-  function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
 
-  async function drawToday() {
-    try {
-      const today = await loadJSON("./today.json");
-      const t = (today && typeof today.q === "string") ? today.q.trim() : "";
+    async function drawToday() {
+      try {
+        const today = await loadJSON("./today.json");
+        const t = (today && typeof today.q === "string") ? today.q.trim() : "";
 
-      // todayが空ならアーカイブから1枚（“沈黙の代替”）
-      if (!t) {
+        if (!t) {
+          const archive = await loadJSON("./questions.json");
+          $q.textContent = pick(archive);
+          return;
+        }
+
+        $q.textContent = t;
+      } catch (e) {
+        console.error(e);
+        $q.textContent = "……";
+      }
+    }
+
+    async function drawRandom() {
+      try {
         const archive = await loadJSON("./questions.json");
         $q.textContent = pick(archive);
-        return;
+      } catch (e) {
+        console.error(e);
+        $q.textContent = "……";
       }
-
-      $q.textContent = t;
-    } catch (e) {
-      console.error(e);
-      $q.textContent = "……";
     }
-  }
 
-  async function drawRandom() {
-    try {
-      const archive = await loadJSON("./questions.json");
-      $q.textContent = pick(archive);
-    } catch (e) {
-      console.error(e);
-      $q.textContent = "……";
-    }
-  }
+    document.getElementById("today").addEventListener("click", drawToday);
+    document.getElementById("more").addEventListener("click", drawRandom);
 
-  // 既存のボタンに紐付け（idはあなたのHTMLに合わせて）
-  document.getElementById("btn-today").addEventListener("click", drawToday);
-  document.getElementById("btn-more").addEventListener("click", drawRandom);
-</script>
-
+    // 初期表示：何も出てないのが気になる場合は、1回だけ今日を表示
+    // drawToday();
+  </script>
 </body>
 </html>
