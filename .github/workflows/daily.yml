@@ -8,20 +8,27 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-question
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Generate daily question
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-1.5-flash
+          # まずは現行で通りやすいモデルに寄せる（1.5で404になってるため）
+          GEMINI_MODEL: gemini-2.0-flash
         run: node scripts/generate_daily_question.mjs
 
       - name: Commit & push
